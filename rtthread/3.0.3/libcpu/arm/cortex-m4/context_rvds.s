@@ -29,6 +29,28 @@ NVIC_PENDSVSET  EQU     0x10000000     ; 触发PendSV exception的值
 		
 
 ;/*
+; * rt_base_t rt_hw_interrupt_disable();
+; */
+rt_hw_interrupt_disable    PROC
+    export rt_hw_interrupt_disable
+    ; 保存原来的值
+    MRS	r0, PRIMASK
+    CPSID   I
+    BX  lr
+    ENDP
+
+;/*
+; * void rt_hw_interrupt_enable(rt_base_t level);
+; */
+rt_hw_interrupt_enable    PROC
+    export rt_hw_interrupt_enable
+    MSR PRIMASK, r0
+    BX  lr
+    ENDP
+    
+
+
+;/*
 ; *-----------------------------------------------------------------------
 ; * 函数原型：void rt_hw_context_switch_to(rt_uint32 to);
 ; * r0 --> to
