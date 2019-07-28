@@ -21,6 +21,10 @@ rt_list_t rt_thread_priority_table[RT_THREAD_PRIORITY_MAX];
 /* 线程休眠列表 */
 rt_list_t rt_thread_defunct;
 
+/* 空闲线程 */
+extern struct rt_thread idle;
+extern struct rt_thread rt_flag1_thread;
+extern struct rt_thread rt_flag2_thread;
 
 /*
 *************************************************************************
@@ -68,32 +72,76 @@ void rt_system_scheduler_start(void)
 /* 系统调度 */
 void rt_schedule(void)
 {
-	struct rt_thread *to_thread;
-	struct rt_thread *from_thread;
-	
-	
-	
-	/* 两个线程轮流切换 */
-	if( rt_current_thread == rt_list_entry( rt_thread_priority_table[0].next,
-													               struct rt_thread,
-													               tlist) )
-	{
-		from_thread = rt_current_thread;
-		to_thread = rt_list_entry( rt_thread_priority_table[1].next,
-													               struct rt_thread,
-													               tlist);
-	  rt_current_thread = to_thread;
-	}
-	else
-	{
-		from_thread = rt_current_thread;
-		to_thread = rt_list_entry( rt_thread_priority_table[0].next,
-																		 struct rt_thread,
-																		 tlist);
-	  rt_current_thread = to_thread;																		 
-	}
-	
-	/* 产生上下文切换 */
-	rt_hw_context_switch((rt_uint32_t)&from_thread->sp,(rt_uint32_t)&to_thread->sp);	
-	
+    struct rt_thread *to_thread;
+    struct rt_thread *from_thread;
+
+    /* 1.如果当前是空闲线程，尝试执行非延时线程 */
+    if (rt_current_thread == &idle)
+    {
+        if (rt_flag1_thread.remaining_tick == 0)
+        {
+            from_thread = rt_current_thread;
+            to_thread   = &rt_flag1_thread;
+            rt_current_thread = to_thread;
+        }
+        else if (rt_flag2_thread.remaining_tick == 0)
+        {
+            from_thread = rt_current_thread;
+            to_thread   = &rt_flag2_thread;
+            rt_current_thread = to_thread;
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    /* 2.如果当前是非空闲线程，尝试执行非延时线程
+     * ....没有非延时线程，如果当前线程非延时，那么继续执行当前线程
+     * ....如果当前线程也处于延时，那么执行空闲线程
+     */
+    else
+    {
+        if (rt_current_thread == &rt_flag1_thread)
+        {
+            if (rt_flag2_thread.remaining_tick == 0)
+            {
+                from_thread = rt_current_thread;
+                to_thread   = &rt_flag2_thread;
+                rt_current_thread = to_thread;
+            }
+            else if (rt_current_thread->remaining_tick != 0)
+            {
+                from_thread = rt_current_thread;
+                to_thread   = &idle;
+                rt_current_thread = to_thread;
+            }
+            else
+            {
+                return ;
+            }
+        }
+        else if (rt_current_thread== &rt_flag2_thread)
+        {
+            if (rt_flag1_thread.remaining_tick == 0)
+            {
+                from_thread = rt_current_thread;
+                to_thread   = &rt_flag1_thread;
+                rt_current_thread = to_thread;
+            }
+            else if (rt_current_thread->remaining_tick != 0)
+            {
+                from_thread = rt_current_thread;
+                to_thread   = &idle;
+                rt_current_thread = to_thread;
+            }
+            else
+            {
+                return ;
+            }
+        }
+    }
+    /* 产生上下文切换 */
+    rt_hw_context_switch((rt_uint32_t)&from_thread->sp,(rt_uint32_t)&to_thread->sp);	
+
 }

@@ -1,6 +1,8 @@
 #include <rtthread.h>
 #include <rthw.h>
 
+extern struct rt_thread *rt_current_thread;
+
 rt_err_t rt_thread_init(struct rt_thread *thread,
                         const char       *name,
                         void (*entry)(void *parameter),
@@ -27,5 +29,14 @@ rt_err_t rt_thread_init(struct rt_thread *thread,
 	return RT_EOK;
 }
 
+// tick µ¥Î»£ºms
+void rt_thread_delay(rt_tick_t tick)
+{
+    struct rt_thread *thread;
+    thread = rt_current_thread;
 
+    thread->remaining_tick = tick;
+
+    rt_schedule();
+}
 

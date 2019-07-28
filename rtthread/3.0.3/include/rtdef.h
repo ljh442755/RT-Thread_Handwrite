@@ -163,13 +163,15 @@ struct rt_thread
     rt_uint8_t  flags;                /* 对象的状态 */
     rt_list_t   list;                 /* 对象的列表节点 */
     
-	rt_list_t   tlist;                /* 线程链表节点 */
+    rt_list_t   tlist;                /* 线程链表节点 */
 
-	void        *sp;	          /* 线程栈指针 */
-	void        *entry;	          /* 线程入口地址 */
-	void        *parameter;	      /* 线程形参 */	
-	void        *stack_addr;      /* 线程起始地址 */
-	rt_uint32_t stack_size;       /* 线程栈大小，单位为字节 */
+    void        *sp;	          /* 线程栈指针 */
+    void        *entry;	          /* 线程入口地址 */
+    void        *parameter;	      /* 线程形参 */	
+    void        *stack_addr;      /* 线程起始地址 */
+    rt_uint32_t stack_size;       /* 线程栈大小，单位为字节 */
+
+    rt_tick_t   remaining_tick;   /* 延时计数器 */
 };
 typedef struct rt_thread *rt_thread_t;
 
